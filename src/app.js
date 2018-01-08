@@ -4,6 +4,7 @@ var PIXI = require('pixi.js');
 import TextureManager from './libs/textureManager.js';
 
 import Face from './face.js';
+import { setTimeout, setInterval } from 'timers';
 
 class Application {
 
@@ -61,6 +62,10 @@ class Application {
     this.animate();
   }
 
+  getRandomInt(max) {
+    return Math.floor(Math.random() * (max));
+  }
+
   initScene() {
     let _this = this;
     this.webcamWidth = this.textureManager.video.videoWidth;
@@ -95,68 +100,23 @@ class Application {
     this.app.stage.addChild(this.webcam_sprite);
 
     this.emojiIndex = 0;
-    this.graphicsFaceScaleFactor = 1.875;
-
-    this.emojiSrcs = [
-      { src: 'public/ARS_emoji_casanova.png',
-        scale: 1*this.graphicsFaceScaleFactor,
-        width: 436,
-        height: 386,
-        offsetY: 0.1
-      },
-      { src: 'public/ARS_emoji_chubby_bear.png',
-        scale: 1*this.graphicsFaceScaleFactor,
-        width: 436,
-        height: 386,
-        offsetY: 0.1
-      },
-      { src: 'public/ARS_emoji_cowboy.png',
-        scale: 1*this.graphicsFaceScaleFactor,
-        width: 436,
-        height: 386,
-        offsetY: 0.1
-      },
-      { src: 'public/ARS_emoji_cry_laugh.png',
-        scale: 1*this.graphicsFaceScaleFactor,
-        width: 436,
-        height: 386,
-        offsetY: 0.1
-      },
-      { src: 'public/ARS_emoji_froggy.png',
-        scale: 1*this.graphicsFaceScaleFactor,
-        width: 436,
-        height: 386,
-        offsetY: 0.1
-      },
-      { src: 'public/ARS_emoji_nerdy_mle.png',
-        scale: 1*this.graphicsFaceScaleFactor,
-        width: 436,
-        height: 386,
-        offsetY: 0.1
-      },
-      { src: 'public/ARS_emoji_nerdy_wom.png',
-        scale: 1*this.graphicsFaceScaleFactor,
-        width: 436,
-        height: 386,
-        offsetY: 0.1
-      },
-      { src: 'public/ARS_emoji_senior_mle.png',
-        scale: 1*this.graphicsFaceScaleFactor,
-        width: 436,
-        height: 386,
-        offsetY: 0.1
-      },
-      { src: 'public/ARS_emoji_surpised.png',
-        scale: 1*this.graphicsFaceScaleFactor,
-        width: 436,
-        height: 386,
-        offsetY: 0.1
-      }
-    ];
-
-    window.addEventListener('message', this.onCVEvent);
+    this.graphicsFaceScaleFactor = 1.875;    
+      
+    fetch(`${window.location.pathname}config.json`, {})
+      .then(res => res.json())
+      .then((config) => { 
+        console.log("Got config");
+        return this.images = config.images.map(i => { 
+          let emoji = new PIXI.Texture.fromImage(i, 'Anonymous');
+          emoji.scale = 1.600;
+          emoji.offsetY = 0.1;
+          return emoji;
+        })
+      })
+      .then(() => window.addEventListener('message', this.onCVEvent));
+   
   }
-
+  
   onCVEvent(e) {
 
     console.log("CV EVENT TRIGGERED");
@@ -205,7 +165,7 @@ class Application {
     var _this = this;
     this.faces.sort(_this.sortFacesByXCoord);
     for (let i = 0; i < this.faces.length; i++) {
-      if (i < this.emojiSrcs.length) {
+      if (i < this.images.length) {
         this.drawGraphic(this.faces[i], i);
       } else {
         this.drawGraphic(this.faces[i], 0);
@@ -241,22 +201,23 @@ class Application {
   }
 
   drawGraphic(face, num) {
-    var _this = this;
+    var _this = this;  
+    let emoji = _this.images[num]; 
 
-    face.emoji = PIXI.Sprite.fromImage(_this.emojiSrcs[num].src);
+    face.emoji = new PIXI.Sprite(_this.images[num]);
     face.emoji.anchor.set(0, 0);
     this.app.stage.addChild(face.emoji);
 
     let w = face.width*this.webcamWidth*this.scale;
     let h = face.height*this.webcamHeight*this.scale;
-    let spriteW = w;
-    let spriteH = spriteW * this.emojiSrcs[num].height / this.emojiSrcs[num].width;
+    let spriteW = w;    
+    let spriteH = spriteW * emoji.height / emoji.width;
 
     face.emoji.width = spriteW;
     face.emoji.height = spriteH;
-    if (this.emojiSrcs[num].hasOwnProperty('scale')) {
-      face.emoji.width *= this.emojiSrcs[num].scale;
-      face.emoji.height *= this.emojiSrcs[num].scale;
+    if (emoji.hasOwnProperty('scale')) {
+      face.emoji.width *= emoji.scale;
+      face.emoji.height *= emoji.scale;
     }
 
     let x = this.webcam_sprite.x + face.lastPosition[0]*this.webcamWidth*this.scale - face.emoji.width/2;
@@ -265,11 +226,11 @@ class Application {
     face.emoji.x = x;
     face.emoji.y = y-60;
 
-    if (this.emojiSrcs[num].hasOwnProperty('offsetX')) {
-      face.emoji.x += this.emojiSrcs[num].offsetX * w;
+    if (emoji.hasOwnProperty('offsetX')) {
+      face.emoji.x += emoji.offsetX * w;
     }
-    if (this.emojiSrcs[num].hasOwnProperty('offsetY')) {
-      face.emoji.y += this.emojiSrcs[num].offsetY * h;
+    if (emoji.hasOwnProperty('offsetY')) {
+      face.emoji.y += emoji.offsetY * h;
     }
   }
 
@@ -282,7 +243,7 @@ class Application {
     requestAnimationFrame(this.animate);
 
     if (this.counter % 400 == 0) {
-      this.shuffleGraphics(this.emojiSrcs);
+      this.shuffleGraphics(this.images);
     }
   }
 }
