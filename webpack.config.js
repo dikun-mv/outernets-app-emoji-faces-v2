@@ -33,12 +33,6 @@ const config = {
       }
     ],
   },
-
-  plugins: [
-    new CopyWebpackPlugin([
-      { from: './public', to: './public' }
-    ]),
-  ]
 };
 
 module.exports = config;
