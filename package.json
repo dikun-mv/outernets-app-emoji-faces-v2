@@ -1,7 +1,7 @@
 {
-  "name": "app-emoji",
+  "name": "app-emoji-config",
   "outernet": {
-    "name": "app-emoji",
+    "name": "app-emoji-config",
     "defaultSettings": {}
   },
   "version": "1.0.0",
